@@ -1,3 +1,4 @@
+// pages/index.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -5,10 +6,10 @@ import * as THREE from "three";
 
 export default function Home() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer>(null);
-  const earthRef = useRef<THREE.Mesh>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const earthRef = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     if (!mountRef.current) return;
