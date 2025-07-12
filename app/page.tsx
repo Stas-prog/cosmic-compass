@@ -118,6 +118,26 @@ export default function Home() {
     };
     animate();
 
+    // Геолокація користувача
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log("🌍 Latitude:", latitude, "Longitude:", longitude);
+
+        // Далі тут можна обчислити положення користувача в екваторіальній системі
+        // і адаптувати орієнтацію компаса
+      },
+      (error) => {
+        console.error("❗ Геолокація не вдалася:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 1000,
+      }
+    );
+
+
     // Сенсори телефону (без any)
     if (
       typeof DeviceOrientationEvent !== "undefined" &&
