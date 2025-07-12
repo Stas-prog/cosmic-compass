@@ -122,17 +122,21 @@ export default function Home() {
       typeof DeviceOrientationEvent !== "undefined" &&
       (DeviceOrientationEvent as any).requestPermission
     ) {
-      (DeviceOrientationEvent as any)
-        .requestPermission()
-        .then((response: any) => {
+      (DeviceOrientationEvent as {
+        requestPermission?: () => Promise<"granted" | "denied">;
+      }).requestPermission?.()
+        .then((response: "granted" | "denied") => {
           if (response === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
           }
         })
-        .catch(console.error);
+        .catch((error: unknown) => {
+          console.error(error);
+        });
     } else {
       window.addEventListener("deviceorientation", handleOrientation);
     }
+
 
     function handleOrientation(event: DeviceOrientationEvent) {
       const alpha = event.alpha || 0;
