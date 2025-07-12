@@ -18,7 +18,7 @@ export default function Home() {
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.z = 12;
+    camera.position.z = 15;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -44,10 +44,11 @@ export default function Home() {
     scene.add(earth);
     earthRef.current = earth;
 
+    // Орбіта
     const orbitCurve = new THREE.EllipseCurve(0, 0, 6, 6, 0, 2 * Math.PI, false, 0);
     const orbitPoints = orbitCurve.getPoints(100);
     const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
-      orbitPoints.map((p) => new THREE.Vector3(p.x, p.y, 0))
+      orbitPoints.map(p => new THREE.Vector3(p.x, p.y, 0))
     );
     const orbitLine = new THREE.Line(
       orbitGeometry,
@@ -55,6 +56,7 @@ export default function Home() {
     );
     scene.add(orbitLine);
 
+    // Зоряне небо
     const starGeometry = new THREE.SphereGeometry(90, 64, 64);
     const starMaterial = new THREE.MeshBasicMaterial({
       map: new THREE.TextureLoader().load("/starfield.jpg"),
@@ -64,36 +66,38 @@ export default function Home() {
     scene.add(starField);
     starFieldRef.current = starField;
 
+    // Стрілки
     let orbitProgress = 0;
-    const initialPoint2 = orbitCurve.getPoint(orbitProgress);
-    const initialPoint = new THREE.Vector3(initialPoint2.x, initialPoint2.y, 0);
-    const initialTangent2 = orbitCurve.getTangent(orbitProgress).normalize();
-    const initialTangent = new THREE.Vector3(initialTangent2.x, initialTangent2.y, 0).normalize();
+    const p0 = orbitCurve.getPoint(orbitProgress);
+    const point = new THREE.Vector3(p0.x, p0.y, 0);
+    const t0 = orbitCurve.getTangent(orbitProgress).normalize();
+    const tangent = new THREE.Vector3(t0.x, t0.y, 0).normalize();
 
-    earth.position.copy(initialPoint);
+    earth.position.copy(point);
 
-    const earthArrow = new THREE.ArrowHelper(initialTangent, initialPoint, 3, 0x00ff00);
+    const earthArrow = new THREE.ArrowHelper(tangent, point, 3, 0x00ff00);
     scene.add(earthArrow);
     earthArrowRef.current = earthArrow;
 
     const solarArrow = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0.5, -0.2).normalize(),
+      new THREE.Vector3(1, 0.4, -0.3).normalize(),
       new THREE.Vector3(0, 0, 0),
       5,
       0xff0000
     );
     scene.add(solarArrow);
 
+    // Анімація
     const animate = () => {
       requestAnimationFrame(animate);
 
       orbitProgress += 0.0005;
       if (orbitProgress > 1) orbitProgress = 0;
 
-      const point2 = orbitCurve.getPoint(orbitProgress);
-      const point = new THREE.Vector3(point2.x, point2.y, 0);
-      const tangent2 = orbitCurve.getTangent(orbitProgress).normalize();
-      const tangent = new THREE.Vector3(tangent2.x, tangent2.y, 0).normalize();
+      const p = orbitCurve.getPoint(orbitProgress);
+      const point = new THREE.Vector3(p.x, p.y, 0);
+      const t = orbitCurve.getTangent(orbitProgress).normalize();
+      const tangent = new THREE.Vector3(t.x, t.y, 0).normalize();
 
       if (earthRef.current) {
         earthRef.current.position.copy(point);
@@ -113,6 +117,7 @@ export default function Home() {
     };
     animate();
 
+    // Сенсори телефону
     if (
       typeof DeviceOrientationEvent !== "undefined" &&
       (DeviceOrientationEvent as any).requestPermission
@@ -143,13 +148,30 @@ export default function Home() {
       }
     }
 
+    // Ресайз
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+    window.addEventListener("resize", handleResize);
+
     return () => {
-      if (renderer && renderer.domElement && mountRef.current) {
+      if (mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
       }
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, []);
 
-  return <div ref={mountRef} className="w-screen h-screen overflow-hidden" />;
+  return (
+    <div
+      ref={mountRef}
+      className="fixed inset-0 overflow-hidden bg-black"
+      style={{ touchAction: "none" }}
+    />
+  );
 }
