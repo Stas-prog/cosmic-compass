@@ -10,6 +10,9 @@ export default function Home() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const earthRef = useRef<THREE.Mesh | null>(null);
+  const starFieldRef = useRef<THREE.Mesh | null>(null);
+  const earthArrowRef = useRef<THREE.ArrowHelper | null>(null);
+
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -78,10 +81,44 @@ export default function Home() {
     };
     animate();
 
+    animate(); // ← запустили анімацію
+
+    // ⬇️ Сюди вставляється код з requestPermission
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      (DeviceOrientationEvent as any).requestPermission
+    ) {
+      (DeviceOrientationEvent as any)
+        .requestPermission()
+        .then((response: any) => {
+          if (response === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+          }
+        })
+        .catch(console.error);
+    } else {
+      window.addEventListener("deviceorientation", handleOrientation);
+    }
+
+    function handleOrientation(event: DeviceOrientationEvent) {
+      const alpha = event.alpha || 0;
+      const beta = event.beta || 0;
+      const gamma = event.gamma || 0;
+
+      if (starFieldRef.current) {
+        starFieldRef.current.rotation.set(
+          THREE.MathUtils.degToRad(beta * 0.05),
+          THREE.MathUtils.degToRad(alpha * 0.05),
+          THREE.MathUtils.degToRad(gamma * 0.05)
+        );
+      }
+    }
+
     return () => {
-      if (mountRef.current) {
+      if (renderer && renderer.domElement && mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
       }
+      window.removeEventListener("deviceorientation", handleOrientation);
     };
   }, []);
 
