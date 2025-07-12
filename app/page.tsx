@@ -10,7 +10,8 @@ export default function Home() {
   const earthArrowRef = useRef<THREE.ArrowHelper | null>(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -22,7 +23,7 @@ export default function Home() {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
@@ -44,11 +45,11 @@ export default function Home() {
     scene.add(earth);
     earthRef.current = earth;
 
-    // Орбіта
+    // Орбіта Землі
     const orbitCurve = new THREE.EllipseCurve(0, 0, 6, 6, 0, 2 * Math.PI, false, 0);
     const orbitPoints = orbitCurve.getPoints(100);
     const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
-      orbitPoints.map(p => new THREE.Vector3(p.x, p.y, 0))
+      orbitPoints.map((p) => new THREE.Vector3(p.x, p.y, 0))
     );
     const orbitLine = new THREE.Line(
       orbitGeometry,
@@ -117,31 +118,35 @@ export default function Home() {
     };
     animate();
 
-    // Сенсори телефону
+    // Сенсори телефону (без any)
     if (
       typeof DeviceOrientationEvent !== "undefined" &&
-      (DeviceOrientationEvent as any).requestPermission
+      "requestPermission" in DeviceOrientationEvent
     ) {
-      (DeviceOrientationEvent as {
-        requestPermission?: () => Promise<"granted" | "denied">;
-      }).requestPermission?.()
-        .then((response: "granted" | "denied") => {
+      (
+        DeviceOrientationEvent as {
+          requestPermission: () => Promise<"granted" | "denied">;
+        }
+      )
+        .requestPermission()
+        .then((response) => {
           if (response === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
+          } else {
+            console.warn("Permission for orientation denied");
           }
         })
         .catch((error: unknown) => {
-          console.error(error);
+          console.error("Orientation permission error:", error);
         });
     } else {
       window.addEventListener("deviceorientation", handleOrientation);
     }
 
-
-    function handleOrientation(event: DeviceOrientationEvent) {
-      const alpha = event.alpha || 0;
-      const beta = event.beta || 0;
-      const gamma = event.gamma || 0;
+    function handleOrientation(event: DeviceOrientationEvent): void {
+      const alpha = event.alpha ?? 0;
+      const beta = event.beta ?? 0;
+      const gamma = event.gamma ?? 0;
 
       if (starFieldRef.current) {
         starFieldRef.current.rotation.set(
@@ -163,11 +168,11 @@ export default function Home() {
     window.addEventListener("resize", handleResize);
 
     return () => {
-      if (mountRef.current) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("deviceorientation", handleOrientation);
+      if (mount && renderer.domElement.parentElement === mount) {
+        mount.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
